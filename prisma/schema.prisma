@@ -1,0 +1,122 @@
+
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Role {
+  DONOR
+  DOCTOR
+  ADMIN
+}
+
+enum BloodType {
+  A_POSITIVE  // A+
+  A_NEGATIVE  // A-
+  B_POSITIVE  // B+
+  B_NEGATIVE  // B-
+  AB_POSITIVE // AB+
+  AB_NEGATIVE // AB-
+  O_POSITIVE  // O+
+  O_NEGATIVE  // O-
+}
+
+enum DonationType {
+  BLOOD       // Цус
+  PLASMA      // Сийвэн
+  ORGAN       // Эрхтэн
+  TISSUE      // Эд эс
+}
+
+enum RequestPriority {
+  NORMAL
+  URGENT
+  EMERGENCY_SOS
+}
+
+enum RequestStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+// MODEL Хүснэгтүүд
+
+// 1. Хэрэглэгч болон Донорын профайл
+model User {
+  id               String           @id @default(uuid())
+  clerkUserId      String           @unique
+  email            String           @unique
+  fullName         String
+  phone            String?
+  role             Role             @default(DONOR)
+  
+  // Донорын мэдээлэл
+  bloodType        BloodType?
+  city             String?
+  isAvailable      Boolean          @default(true)
+  lastDonatedAt    DateTime?
+  donationTypes    DonationType[]
+
+  // Эмчийн мэдээлэл
+  isDoctorVerified Boolean          @default(false)
+  hospitalName     String?
+
+  // Холбоосууд
+  donations        DonationRecord[]
+  doctorRequests   MedicalRequest[] @relation("DoctorRequests")
+  receivedBadges   UserBadge[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+// 2. Хандив / Донор таталтын түүх
+model DonationRecord {
+  id        String       @id @default(uuid())
+  donorId   String
+  donor     User         @relation(fields: [donorId], references: [id])
+  type      DonationType
+  notes     String?
+  donatedAt DateTime     @default(now())
+}
+
+// 3. Эмнэлэг / Эмчийн яаралтай хүсэлт (SOS)
+model MedicalRequest {
+  id          String          @id @default(uuid())
+  doctorId    String
+  doctor      User            @relation("DoctorRequests", fields: [doctorId], references: [id])
+  bloodType   BloodType?
+  type        DonationType
+  priority    RequestPriority @default(NORMAL)
+  status      RequestStatus   @default(PENDING)
+  title       String
+  description String
+  hospital    String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+// 4. Гамификаци (Тэмдэгнүүд)
+model Badge {
+  id          String      @id @default(uuid())
+  name        String
+  description String
+  iconUrl     String
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  awardedAt DateTime @default(now())
+}

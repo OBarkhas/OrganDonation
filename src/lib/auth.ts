@@ -1,34 +1,93 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import type { Role } from "@/generated/prisma/client";
 
-export async function ensureUser(): Promise<string> {
+/**
+ * Guarantees a Neon DB record exists for the signed-in Clerk user.
+ * - Looks up by `clerkUserId` first, then falls back to `email`, so an
+ *   existing row (e.g. one created by the Clerk webhook for the same person)
+ *   is linked instead of crashing with `Unique constraint failed on email`.
+ * - Keeps email / full name in sync on every sign-in.
+ * - Promotes a DONOR to DOCTOR when they register through the doctor flow
+ *   (never demotes an existing DOCTOR).
+ */
+export async function ensureUserWithRole(preferredRole: Role = "DONOR") {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const { clerkClient } = await import("@clerk/nextjs/server");
-  const client = await clerkClient();
-  const clerkUser = await client.users.getUser(userId);
+  const clerkUser = await currentUser();
+  if (!clerkUser) throw new Error("Clerk user not found");
 
-  const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+  const email = clerkUser.emailAddresses[0]?.emailAddress || "";
   const fullName =
     `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
-    "Шинэ Хэрэглэгч";
-
-  await db.user.upsert({
+    "New User";
+  const resolveRole = (current: Role): Role =>
+    preferredRole === "DOCTOR" && current === "DONOR" ? "DOCTOR" : current;
+  let existingUser = await db.user.findUnique({
     where: { clerkUserId: userId },
-    create: {
-      clerkUserId: userId,
-      email,
-      fullName,
-      role: "DONOR",
-    },
-    update: {
-      email,
-      fullName,
-    },
   });
+  if (!existingUser && email) {
+    existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return await db.user.update({
+        where: { id: existingUser.id },
+        data: {
+          clerkUserId: userId,
+          fullName,
+          role: resolveRole(existingUser.role),
+        },
+      });
+    }
+  }
+  if (existingUser) {
+    return await db.user.update({
+      where: { id: existingUser.id },
+      data: {
+        email,
+        fullName,
+        role: resolveRole(existingUser.role),
+      },
+    });
+  }
+  try {
+    return await db.user.create({
+      data: {
+        clerkUserId: userId,
+        email,
+        fullName,
+        role: preferredRole,
+      },
+    });
+  } catch (err) {
+    const isUniqueViolation =
+      err instanceof Error && (err as { code?: unknown }).code === "P2002";
+    if (isUniqueViolation) {
+      const raced = await db.user.findUnique({
+        where: { clerkUserId: userId },
+      });
+      if (raced) return raced;
+      if (email) {
+        const byEmail = await db.user.findUnique({ where: { email } });
+        if (byEmail) return byEmail;
+      }
+    }
+    throw err;
+  }
+}
 
-  return userId;
+export async function getCurrentUser() {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const existing = await db.user.findUnique({ where: { clerkUserId: userId } });
+  if (existing) return existing;
+  try {
+    return await ensureUserWithRole("DONOR");
+  } catch (err) {
+    console.error("[auth] self-heal sync failed:", err);
+    return null;
+  }
 }

@@ -46,9 +46,13 @@ enum RequestStatus {
   CANCELLED
 }
 
-// MODEL Хүснэгтүүд
-
-// 1. Хэрэглэгч болон Донорын профайл
+enum DonationStatus {
+  PENDING    // Donor applied
+  ACCEPTED   // Doctor scheduled an appointment
+  REJECTED   // Doctor declined the application
+  COMPLETED  // Donation was physically performed
+  CANCELLED  // Donor or Doctor cancelled
+}
 model User {
   id               String           @id @default(uuid())
   clerkUserId      String           @unique
@@ -56,56 +60,59 @@ model User {
   fullName         String
   phone            String?
   role             Role             @default(DONOR)
-  
-  // Донорын мэдээлэл
   bloodType        BloodType?
   city             String?
   isAvailable      Boolean          @default(true)
+  isProfileComplete Boolean         @default(false)
   lastDonatedAt    DateTime?
   donationTypes    DonationType[]
-
-  // Эмчийн мэдээлэл
   isDoctorVerified Boolean          @default(false)
   hospitalName     String?
-
-  // Холбоосууд
   donations        DonationRecord[]
   doctorRequests   MedicalRequest[] @relation("DoctorRequests")
+  targetedRequests MedicalRequest[] @relation("TargetedRequests")
   receivedBadges   UserBadge[]
+  notifications    Notification[]
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
-
-// 2. Хандив / Донор таталтын түүх
 model DonationRecord {
-  id        String       @id @default(uuid())
-  donorId   String
-  donor     User         @relation(fields: [donorId], references: [id])
-  type      DonationType
-  notes     String?
-  donatedAt DateTime     @default(now())
+  id              String          @id @default(uuid())
+  requestId       String?
+  request         MedicalRequest? @relation(fields: [requestId], references: [id])
+  donorId         String
+  donor           User            @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  type            DonationType
+  status          DonationStatus  @default(PENDING)
+  appointmentNote String?
+  rejectionReason String?
+  rating          Int?
+  feedback        String?
+  notes           String?
+  donatedAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
-
-// 3. Эмнэлэг / Эмчийн яаралтай хүсэлт (SOS)
 model MedicalRequest {
-  id          String          @id @default(uuid())
-  doctorId    String
-  doctor      User            @relation("DoctorRequests", fields: [doctorId], references: [id])
-  bloodType   BloodType?
-  type        DonationType
-  priority    RequestPriority @default(NORMAL)
-  status      RequestStatus   @default(PENDING)
-  title       String
-  description String
-  hospital    String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id           String          @id @default(uuid())
+  doctorId     String
+  doctor       User            @relation("DoctorRequests", fields: [doctorId], references: [id])
+  targetUserId String?
+  targetUser   User?           @relation("TargetedRequests", fields: [targetUserId], references: [id])
+  bloodType    BloodType?
+  type         DonationType
+  priority     RequestPriority @default(NORMAL)
+  status       RequestStatus   @default(PENDING)
+  title        String
+  description  String
+  hospital     String
+  donations    DonationRecord[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
-
-// 4. Гамификаци (Тэмдэгнүүд)
 model Badge {
   id          String      @id @default(uuid())
+  key         String      @unique
   name        String
   description String
   iconUrl     String
@@ -119,4 +126,15 @@ model UserBadge {
   badgeId   String
   badge     Badge    @relation(fields: [badgeId], references: [id])
   awardedAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
 }

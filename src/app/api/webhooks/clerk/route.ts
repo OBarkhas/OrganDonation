@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     return new Response("Missing svix headers", { status: 400 });
   }
 
-  let payload: any;
+  let payload: unknown;
   try {
     payload = await req.json();
   } catch {
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         const email = data.email_addresses?.[0]?.email_address ?? "";
         const fullName =
           `${data.first_name || ""} ${data.last_name || ""}`.trim() ||
-          "Шинэ Хэрэглэгч";
+          "New User";
 
         console.log(
           `[webhook] ${eventType}: clerkUserId=${data.id}, email=${email}`,

@@ -7,15 +7,11 @@ import type {
   User,
 } from "@/generated/prisma/client";
 
-/* ---------------------------------- cn ---------------------------------- */
-
 export function cn(
   ...classes: Array<string | false | null | undefined>
 ): string {
   return classes.filter(Boolean).join(" ");
 }
-
-/* -------------------------------- Labels -------------------------------- */
 
 export const BLOOD_TYPE_LABELS: Record<BloodType, string> = {
   A_POSITIVE: "A+",
@@ -59,6 +55,37 @@ export function bloodTypeLabel(type?: BloodType | null): string {
   return type ? BLOOD_TYPE_LABELS[type] : "Unknown";
 }
 
+export const DONATION_COOLDOWN_DAYS = 30;
+
+export const BLOOD_TYPE_COMPATIBILITY: Record<BloodType, BloodType[]> = {
+  O_NEGATIVE: [
+    "O_NEGATIVE",
+    "O_POSITIVE",
+    "A_NEGATIVE",
+    "A_POSITIVE",
+    "B_NEGATIVE",
+    "B_POSITIVE",
+    "AB_NEGATIVE",
+    "AB_POSITIVE",
+  ],
+  O_POSITIVE: ["O_POSITIVE", "A_POSITIVE", "B_POSITIVE", "AB_POSITIVE"],
+  A_NEGATIVE: ["A_NEGATIVE", "A_POSITIVE", "AB_NEGATIVE", "AB_POSITIVE"],
+  A_POSITIVE: ["A_POSITIVE", "AB_POSITIVE"],
+  B_NEGATIVE: ["B_NEGATIVE", "B_POSITIVE", "AB_NEGATIVE", "AB_POSITIVE"],
+  B_POSITIVE: ["B_POSITIVE", "AB_POSITIVE"],
+  AB_NEGATIVE: ["AB_NEGATIVE", "AB_POSITIVE"],
+  AB_POSITIVE: ["AB_POSITIVE"],
+};
+
+export function canDonateBlood(
+  donorType?: BloodType | null,
+  recipientType?: BloodType | null,
+): boolean {
+  if (!recipientType) return true;
+  if (!donorType) return false;
+  return BLOOD_TYPE_COMPATIBILITY[donorType].includes(recipientType);
+}
+
 export function donationTypeLabel(type: DonationType): string {
   return DONATION_TYPE_LABELS[type] ?? type;
 }
@@ -74,8 +101,6 @@ export function statusLabel(status: RequestStatus): string {
 export function donationStatusLabel(status: DonationStatus): string {
   return DONATION_STATUS_LABELS[status] ?? status;
 }
-
-/* --------------------------------- Dates -------------------------------- */
 
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
@@ -121,9 +146,6 @@ export function initials(name: string): string {
     .join("");
 }
 
-/* --------------------------------- DTOs --------------------------------- */
-/* Dates are serialized to ISO strings before crossing the RSC boundary.    */
-
 export interface UserDto {
   id: string;
   clerkUserId: string;
@@ -144,10 +166,6 @@ export interface UserDto {
   updatedAt: string;
 }
 
-/**
- * A profile is considered complete when the critical fields that are
- * required for donation/request actions are present.
- */
 export function hasCompletedProfile(user: {
   phone?: string | null;
   bloodType?: BloodType | null;
@@ -217,10 +235,6 @@ export interface DonationDto {
   } | null;
 }
 
-/**
- * A donor application on a doctor's request, with the donor's contact info
- * and the linked request summary. Dates are ISO strings (serialized JSON).
- */
 export interface ApplicationDto {
   id: string;
   requestId: string | null;
@@ -267,7 +281,6 @@ export interface BadgeDto {
   iconUrl: string;
 }
 
-/** Donor leaderboard entry. */
 export interface LeaderboardEntryDto {
   id: string;
   fullName: string;
@@ -278,7 +291,6 @@ export interface LeaderboardEntryDto {
   badges: BadgeDto[];
 }
 
-/** Full donor profile (shown to doctors via the donor profile modal). */
 export interface DonorProfileDto {
   id: string;
   fullName: string;
@@ -293,7 +305,6 @@ export interface DonorProfileDto {
   badges: BadgeDto[];
 }
 
-/** Current user's own profile payload (role-aware). */
 export interface ProfileDto {
   role: User["role"];
   fullName: string;

@@ -10,7 +10,11 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { BLOOD_TYPE_LABELS, DONATION_TYPE_LABELS, type RequestDto } from "@/lib/utils";
+import {
+  BLOOD_TYPE_LABELS,
+  DONATION_TYPE_LABELS,
+  type RequestDto,
+} from "@/lib/utils";
 
 export interface EditRequestModalProps {
   open: boolean;
@@ -25,7 +29,6 @@ const priorities: Array<{ value: RequestPriority; label: string }> = [
   { value: "EMERGENCY_SOS", label: "🚨 Emergency SOS" },
 ];
 
-/** Modal to edit an existing doctor request (title, blood type, priority, notes). */
 export function EditRequestModal({
   open,
   request,

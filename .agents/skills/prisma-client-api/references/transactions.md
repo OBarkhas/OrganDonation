@@ -138,12 +138,7 @@ try {
 
 ```typescript
 await prisma.$transaction(async (tx) => {});
-await prisma.$transaction(
-  async (tx) => {
-    /* operations */
-  },
-  { isolationLevel: "Serializable" },
-);
+await prisma.$transaction(async (tx) => {}, { isolationLevel: "Serializable" });
 ```
 
 ## Sequential vs Interactive

@@ -7,13 +7,6 @@ import { timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/**
- * Notification bell shown in the top navbar for signed-in users.
- * Fetches the current user's notifications, shows an unread badge, and opens
- * an anchored dropdown popover listing them with a "mark all read" action.
- * The bell toggles the popover; clicking outside, pressing Escape, or hitting
- * the header close button dismisses it.
- */
 export function NotificationsBell() {
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [open, setOpen] = useState(false);

@@ -27,12 +27,6 @@ const doctorInclude = {
   },
 } as const;
 
-/**
- * GET /api/requests
- * - Doctors: all requests they created (all statuses).
- * - Donors: pending PUBLIC requests (targetUserId IS NULL) plus any request
- *   targeted directly at them, optionally filtered by bloodType.
- */
 export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {

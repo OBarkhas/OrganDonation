@@ -34,7 +34,6 @@ import {
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
-/** Role-aware profile page content (fetches /api/profile). */
 export function ProfileView({ embedded = false }: { embedded?: boolean }) {
   const [profile, setProfile] = useState<ProfileDto | null>(null);
   const [loading, setLoading] = useState(true);

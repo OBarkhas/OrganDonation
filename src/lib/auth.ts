@@ -4,15 +4,6 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import type { Role } from "@/generated/prisma/client";
 
-/**
- * Guarantees a Neon DB record exists for the signed-in Clerk user.
- * - Looks up by `clerkUserId` first, then falls back to `email`, so an
- *   existing row (e.g. one created by the Clerk webhook for the same person)
- *   is linked instead of crashing with `Unique constraint failed on email`.
- * - Keeps email / full name in sync on every sign-in.
- * - Promotes a DONOR to DOCTOR when they register through the doctor flow
- *   (never demotes an existing DOCTOR).
- */
 export async function ensureUserWithRole(preferredRole: Role = "DONOR") {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");

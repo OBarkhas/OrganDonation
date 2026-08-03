@@ -2,13 +2,6 @@ import { redirect } from "next/navigation";
 import { ensureUserWithRole } from "@/lib/auth";
 import { hasCompletedProfile } from "@/lib/utils";
 
-/**
- * Post sign-up / sign-in redirect handler.
- * Reads ?role=DOCTOR|DONOR, syncs the Neon DB, then routes accordingly:
- *  - Incomplete profile → /onboarding (user fills in bloodType, phone, city)
- *  - DOCTOR → /doctor
- *  - DONOR  → /
- */
 export default async function RedirectPage({
   searchParams,
 }: {

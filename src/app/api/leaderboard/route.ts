@@ -5,10 +5,6 @@ import { ensureBadges } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/leaderboard — donors ranked by completed donation count,
- * descending, with blood type and earned badges.
- */
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {

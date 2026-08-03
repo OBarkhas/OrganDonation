@@ -30,7 +30,6 @@ export interface DonorProfileModalProps {
   onRequestDirect: (donorId: string) => void;
 }
 
-/** Full donor profile modal with a "Request Directly to this User" action. */
 export function DonorProfileModal({
   open,
   donorId,

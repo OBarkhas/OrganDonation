@@ -5,11 +5,6 @@ import { getBadgeStatusForDonor } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/profile — the signed-in user's own profile, shaped by role.
- * - DONOR: personal info, completed donation count, badge status (earned/locked).
- * - DOCTOR: hospital info, verification, total requests, successful matches.
- */
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {

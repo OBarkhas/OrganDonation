@@ -5,10 +5,6 @@ import type { BloodType } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/donors — search available donors (DOCTOR only).
- * Query params: bloodType, city, q (name/city search), limit.
- */
 export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {
@@ -36,11 +32,20 @@ export async function GET(req: Request) {
   if (
     rawBloodType &&
     ![
-      "A_POSITIVE", "A_NEGATIVE", "B_POSITIVE", "B_NEGATIVE",
-      "AB_POSITIVE", "AB_NEGATIVE", "O_POSITIVE", "O_NEGATIVE",
+      "A_POSITIVE",
+      "A_NEGATIVE",
+      "B_POSITIVE",
+      "B_NEGATIVE",
+      "AB_POSITIVE",
+      "AB_NEGATIVE",
+      "O_POSITIVE",
+      "O_NEGATIVE",
     ].includes(rawBloodType)
   ) {
-    return NextResponse.json({ error: "Invalid bloodType filter" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid bloodType filter" },
+      { status: 400 },
+    );
   }
   const bloodType = (rawBloodType ?? undefined) as BloodType | undefined;
 

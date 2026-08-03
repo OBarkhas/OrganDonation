@@ -15,12 +15,15 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+  font-family:
+    var(--font-sans),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Tailwind v4 animation utilities used by the Modal component */
 @utility animate-in {
   animation: enter 0.2s ease-out both;
 }
@@ -67,7 +70,6 @@ body {
   color: #7f1d1d;
 }
 
-/* Slim, subtle scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: #d4d4d8 transparent;

@@ -192,8 +192,8 @@ class MyQueryable<TClient> implements SqlQueryable {
         mapArg(arg, query.argTypes[i] ?? { scalarType: "unknown", arity: "scalar" })
       );
       const result = await this.client.query(query.sql, args);
-      const columnNames = /* get from result */;
-      const columnTypes = /* map to ColumnTypeEnum */;
+      const columnNames = ;
+      const columnTypes = ;
       const rows = result.map(row => mapRow(row, columnTypes));
 
       return { columnNames, columnTypes, rows };
@@ -368,7 +368,7 @@ function mapArg(arg: unknown, argType: ArgType): unknown {
     return BigInt(arg);
   if (typeof arg === "string" && argType.scalarType === "bytes")
     return Buffer.from(arg, "base64");
-  if (typeof arg === "boolean" && /* SQLite */)
+  if (typeof arg === "boolean" && )
     return arg ? 1 : 0;
 
   return arg;

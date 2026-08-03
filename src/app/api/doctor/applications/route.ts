@@ -13,10 +13,6 @@ const VALID_UPDATES: DonationStatus[] = [
   "CANCELLED",
 ];
 
-/**
- * GET /api/doctor/applications — all donor applications on this doctor's
- * requests, newest first, with donor contact details.
- */
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
@@ -64,15 +60,6 @@ export async function GET() {
   return NextResponse.json(applications);
 }
 
-/**
- * PATCH /api/doctor/applications — accept (with appointment note), reject,
- * complete, or mark-as-missed (CANCELLED) a donor application. Only the
- * doctor who owns the linked request can act on it. All actions create a
- * Notification for the donor; completing also updates the donor's
- * lastDonatedAt and awards any newly-unlocked badges.
- *
- * Body: { applicationId, status: "ACCEPTED" | "REJECTED" | "COMPLETED" | "CANCELLED", note? }
- */
 export async function PATCH(req: Request) {
   const { userId } = await auth();
   if (!userId) {

@@ -34,14 +34,24 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const [donationCount, badgeCount] = await Promise.all([
+  const [donationCount, badgeCount, lastCompleted] = await Promise.all([
     db.donationRecord.count({
       where: { donorId: user.id, status: "COMPLETED" },
     }),
     db.userBadge.count({ where: { userId: user.id } }),
+    db.donationRecord.findFirst({
+      where: { donorId: user.id, status: "COMPLETED" },
+      orderBy: { donatedAt: "desc" },
+      select: { donatedAt: true },
+    }),
   ]);
 
-  return NextResponse.json({ ...user, donationCount, badgeCount });
+  return NextResponse.json({
+    ...user,
+    donationCount,
+    badgeCount,
+    lastCompletedDonationAt: lastCompleted?.donatedAt.toISOString() ?? null,
+  });
 }
 
 export async function PATCH(req: Request) {

@@ -4,11 +4,10 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/donors/[id] — full donor profile for doctors: contact info,
- * completed donation count, and earned badges.
- */
-export async function GET(_req: Request, ctx: RouteContext<"/api/donors/[id]">) {
+export async function GET(
+  _req: Request,
+  ctx: RouteContext<"/api/donors/[id]">,
+) {
   const { id } = await ctx.params;
 
   const { userId } = await auth();
@@ -39,7 +38,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/donors/[id]">) 
       lastDonatedAt: true,
       donationTypes: true,
       receivedBadges: {
-        select: { badge: { select: { id: true, key: true, name: true, iconUrl: true } } },
+        select: {
+          badge: { select: { id: true, key: true, name: true, iconUrl: true } },
+        },
       },
     },
   });

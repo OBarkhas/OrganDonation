@@ -17,7 +17,7 @@ export interface EmergencyModalProps {
   onClose: () => void;
   onCreated: () => void | Promise<void>;
   defaultHospital?: string | null;
-  /** When set, creates a private request targeted at this donor. */
+
   targetUserId?: string | null;
   targetName?: string | null;
 }

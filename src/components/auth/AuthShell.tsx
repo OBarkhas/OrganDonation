@@ -1,9 +1,5 @@
 import type { ReactNode } from "react";
 
-/**
- * Shared visual shell for the auth pages (sign-in / sign-up).
- * Centered card on a soft red gradient with decorative blobs.
- */
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative flex min-h-[calc(100dvh-4rem)] items-center justify-center overflow-hidden bg-gradient-to-b from-red-50 via-white to-white px-4 py-10">

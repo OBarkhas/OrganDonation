@@ -54,10 +54,6 @@ const statusLabels: Record<DonationStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-/**
- * Lists every donor who applied to a request and lets the doctor accept
- * (with appointment instructions), reject, or mark as completed.
- */
 export function ApplicantsModal({
   open,
   request,

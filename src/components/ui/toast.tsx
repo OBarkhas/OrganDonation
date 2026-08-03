@@ -10,9 +10,6 @@ export interface ToastProps {
   tone?: "success" | "error";
 }
 
-/**
- * Auto-dismissing toast notification (fixed, bottom-center).
- */
 export function Toast({ message, onClose, tone = "success" }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);

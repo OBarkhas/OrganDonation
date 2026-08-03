@@ -4,9 +4,6 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/notifications — the current user's notifications, newest first.
- */
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
@@ -27,10 +24,6 @@ export async function GET() {
   return NextResponse.json(notifications);
 }
 
-/**
- * PATCH /api/notifications — mark all of the current user's notifications
- * as read.
- */
 export async function PATCH() {
   const { userId } = await auth();
   if (!userId) {

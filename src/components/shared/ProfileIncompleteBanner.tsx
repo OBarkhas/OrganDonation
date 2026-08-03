@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 
-/**
- * Alert banner shown to users whose profile is incomplete.
- * Clicking it (or the button) opens the /onboarding page.
- */
 export function ProfileIncompleteBanner() {
   return (
     <div

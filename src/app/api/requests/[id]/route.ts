@@ -43,13 +43,17 @@ const VALID_PRIORITIES: RequestPriority[] = [
   "EMERGENCY_SOS",
 ];
 
-/** Fetch the request and verify the signed-in doctor owns it. */
 async function getOwnedRequest(id: string) {
   const { userId } = await auth();
-  if (!userId) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!userId)
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
   const user = await db.user.findUnique({ where: { clerkUserId: userId } });
   if (!user) {
-    return { error: NextResponse.json({ error: "User not found" }, { status: 404 }) };
+    return {
+      error: NextResponse.json({ error: "User not found" }, { status: 404 }),
+    };
   }
   if (user.role !== "DOCTOR") {
     return {
@@ -64,7 +68,9 @@ async function getOwnedRequest(id: string) {
     include: doctorInclude,
   });
   if (!request) {
-    return { error: NextResponse.json({ error: "Request not found" }, { status: 404 }) };
+    return {
+      error: NextResponse.json({ error: "Request not found" }, { status: 404 }),
+    };
   }
   if (request.doctorId !== user.id) {
     return {
@@ -77,10 +83,6 @@ async function getOwnedRequest(id: string) {
   return { request };
 }
 
-/**
- * PATCH /api/requests/[id] — update a doctor's own request.
- * Body: { title?, description?, bloodType?, type?, priority?, hospital? }
- */
 export async function PATCH(
   req: Request,
   ctx: RouteContext<"/api/requests/[id]">,
@@ -113,11 +115,18 @@ export async function PATCH(
       { status: 400 },
     );
   }
-  if (bloodType !== undefined && bloodType !== null && !VALID_BLOOD.includes(bloodType)) {
+  if (
+    bloodType !== undefined &&
+    bloodType !== null &&
+    !VALID_BLOOD.includes(bloodType)
+  ) {
     return NextResponse.json({ error: "Invalid blood type" }, { status: 400 });
   }
   if (type !== undefined && !VALID_TYPES.includes(type)) {
-    return NextResponse.json({ error: "Invalid donation type" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid donation type" },
+      { status: 400 },
+    );
   }
   if (priority !== undefined && !VALID_PRIORITIES.includes(priority)) {
     return NextResponse.json({ error: "Invalid priority" }, { status: 400 });
@@ -143,12 +152,17 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[api/requests/[id]] PATCH failed:", err);
-    return NextResponse.json({ error: "Could not update request" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not update request" },
+      { status: 500 },
+    );
   }
 }
 
-/** DELETE /api/requests/[id] — delete a doctor's own request. */
-export async function DELETE(_req: Request, ctx: RouteContext<"/api/requests/[id]">) {
+export async function DELETE(
+  _req: Request,
+  ctx: RouteContext<"/api/requests/[id]">,
+) {
   const { id } = await ctx.params;
   const owned = await getOwnedRequest(id);
   if (owned.error) return owned.error;
@@ -158,6 +172,9 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/requests/[id
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[api/requests/[id]] DELETE failed:", err);
-    return NextResponse.json({ error: "Could not delete request" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not delete request" },
+      { status: 500 },
+    );
   }
 }

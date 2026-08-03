@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { awardBadgesForDonor } from "@/lib/badges";
-import { hasCompletedProfile } from "@/lib/utils";
+import { canDonateBlood, hasCompletedProfile } from "@/lib/utils";
 import type { DonationStatus, DonationType } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
+
+const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function GET() {
   const { userId } = await auth();
@@ -79,14 +81,38 @@ export async function POST(req: Request) {
     );
   }
 
+  const lastCompleted = await db.donationRecord.findFirst({
+    where: { donorId: user.id, status: "COMPLETED" },
+    orderBy: { donatedAt: "desc" },
+    select: { donatedAt: true },
+  });
+  if (
+    lastCompleted &&
+    Date.now() - lastCompleted.donatedAt.getTime() < COOLDOWN_MS
+  ) {
+    return NextResponse.json(
+      { error: "30-day cooldown period has not elapsed" },
+      { status: 400 },
+    );
+  }
+
   if (requestId) {
     const linkedRequest = await db.medicalRequest.findUnique({
       where: { id: requestId },
-      select: { id: true },
+      select: { id: true, bloodType: true },
     });
     if (!linkedRequest) {
       return NextResponse.json(
         { error: "Linked request not found" },
+        { status: 400 },
+      );
+    }
+    if (
+      linkedRequest.bloodType &&
+      !canDonateBlood(user.bloodType, linkedRequest.bloodType)
+    ) {
+      return NextResponse.json(
+        { error: "Blood type mismatch" },
         { status: 400 },
       );
     }

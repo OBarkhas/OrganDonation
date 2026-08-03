@@ -30,14 +30,20 @@ import { LeaderboardView } from "@/components/leaderboard/LeaderboardView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import {
   bloodTypeLabel,
+  canDonateBlood,
   cn,
+  DONATION_COOLDOWN_DAYS,
   donationTypeLabel,
   timeAgo,
   type RequestDto,
   type UserDto,
 } from "@/lib/utils";
 
-type UserPayload = UserDto & { donationCount?: number; badgeCount?: number };
+type UserPayload = UserDto & {
+  donationCount?: number;
+  badgeCount?: number;
+  lastCompletedDonationAt?: string | null;
+};
 
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: Home },
@@ -52,6 +58,11 @@ export function DonorHomeView({ user }: { user: UserDto }) {
   const [active, setActive] = useState("overview");
   const [toggling, setToggling] = useState(false);
   const [daysSince, setDaysSince] = useState<number | null>(null);
+  const [nextEligibleAt, setNextEligibleAt] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState<{
+    inCooldown: boolean;
+    daysUntilEligible: number | null;
+  }>({ inCooldown: false, daysUntilEligible: null });
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RequestDto | null>(
     null,
@@ -86,6 +97,23 @@ export function DonorHomeView({ user }: { user: UserDto }) {
                 ),
               )
             : null,
+        );
+        const nextEligibleTime = profileData.lastCompletedDonationAt
+          ? new Date(profileData.lastCompletedDonationAt).getTime() +
+            DONATION_COOLDOWN_DAYS * 86_400_000
+          : null;
+        setNextEligibleAt(
+          nextEligibleTime ? new Date(nextEligibleTime).toISOString() : null,
+        );
+        setCooldown(
+          nextEligibleTime && nextEligibleTime > Date.now()
+            ? {
+                inCooldown: true,
+                daysUntilEligible: Math.ceil(
+                  (nextEligibleTime - Date.now()) / 86_400_000,
+                ),
+              }
+            : { inCooldown: false, daysUntilEligible: null },
         );
       } catch (err) {
         if (!cancelled) {
@@ -173,6 +201,30 @@ export function DonorHomeView({ user }: { user: UserDto }) {
                           >
                             <BadgeCheck className="size-3" />
                             Available to donate
+                          </Badge>
+                        )}
+                        {profile &&
+                          cooldown.inCooldown &&
+                          cooldown.daysUntilEligible !== null && (
+                            <Badge
+                              tone="amber"
+                              className="border-amber-300/40 bg-amber-400/20 text-amber-50"
+                            >
+                              <CalendarDays className="size-3" />
+                              Next eligible donation in{" "}
+                              {cooldown.daysUntilEligible}{" "}
+                              {cooldown.daysUntilEligible === 1
+                                ? "day"
+                                : "days"}
+                            </Badge>
+                          )}
+                        {profile && !cooldown.inCooldown && (
+                          <Badge
+                            tone="green"
+                            className="border-emerald-300/40 bg-emerald-400/20 text-emerald-50"
+                          >
+                            <BadgeCheck className="size-3" />
+                            Eligible to donate now
                           </Badge>
                         )}
                       </div>
@@ -331,6 +383,21 @@ export function DonorHomeView({ user }: { user: UserDto }) {
                                   {bloodTypeLabel(r.bloodType)}
                                 </Badge>
                               )}
+                              {r.bloodType && donorDto.bloodType && (
+                                canDonateBlood(
+                                  donorDto.bloodType,
+                                  r.bloodType,
+                                ) ? (
+                                  <Badge tone="green">
+                                    🟢 Compatible
+                                  </Badge>
+                                ) : (
+                                  <Badge tone="red">
+                                    🔴 Incompatible Blood Type (Requires{" "}
+                                    {bloodTypeLabel(r.bloodType)})
+                                  </Badge>
+                                )
+                              )}
                               <Badge tone="zinc">
                                 {donationTypeLabel(r.type)}
                               </Badge>
@@ -374,6 +441,9 @@ export function DonorHomeView({ user }: { user: UserDto }) {
       <DonationDetailsModal
         request={selectedRequest}
         profileComplete={profileComplete}
+        donorBloodType={donorDto.bloodType}
+        nextEligibleAt={nextEligibleAt}
+        inCooldown={cooldown.inCooldown}
         onClose={() => setSelectedRequest(null)}
         onDonated={() => {
           setSelectedRequest(null);

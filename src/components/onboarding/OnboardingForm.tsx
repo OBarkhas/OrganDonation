@@ -8,11 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { BLOOD_TYPE_LABELS, type UserDto } from "@/lib/utils";
 
-/**
- * Profile completion / editing form. Pre-fills the user's existing details so
- * they only need to complete the missing fields. Saves to the DB via
- * PATCH /api/user and unlocks donation/request actions once complete.
- */
 export function OnboardingForm({ user }: { user: UserDto }) {
   const router = useRouter();
   const isEditing = user.hasCompletedProfile;

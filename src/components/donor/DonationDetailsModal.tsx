@@ -10,8 +10,14 @@ import {
   Siren,
 } from "lucide-react";
 import type { RequestDto } from "@/lib/utils";
-import type { RequestPriority } from "@/generated/prisma/client";
-import { bloodTypeLabel, donationTypeLabel, priorityLabel } from "@/lib/utils";
+import type { BloodType, RequestPriority } from "@/generated/prisma/client";
+import {
+  bloodTypeLabel,
+  canDonateBlood,
+  donationTypeLabel,
+  formatDate,
+  priorityLabel,
+} from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -19,6 +25,12 @@ import { Modal } from "@/components/ui/modal";
 export interface DonationDetailsModalProps {
   request: RequestDto | null;
   profileComplete: boolean;
+
+  donorBloodType: BloodType | null;
+
+  nextEligibleAt: string | null;
+
+  inCooldown: boolean;
   onClose: () => void;
   onDonated: () => void;
 }
@@ -29,20 +41,22 @@ const priorityTones: Record<RequestPriority, "red" | "amber" | "zinc"> = {
   NORMAL: "zinc",
 };
 
-/**
- * Modal showing full details of an open hospital request. The donor can
- * register their willingness to donate (creates a PENDING donation record)
- * via the "Donate Now" button, which is only enabled when their profile is
- * complete.
- */
 export function DonationDetailsModal({
   request,
   profileComplete,
+  donorBloodType,
+  nextEligibleAt,
+  inCooldown,
   onClose,
   onDonated,
 }: DonationDetailsModalProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const compatible = request?.bloodType
+    ? canDonateBlood(donorBloodType, request.bloodType)
+    : true;
+  const canDonate = compatible && !inCooldown;
 
   if (!request) return null;
 
@@ -111,6 +125,13 @@ export function DonationDetailsModal({
                 <Badge tone="red">{bloodTypeLabel(request.bloodType)}</Badge>
               )}
               <Badge tone="zinc">{donationTypeLabel(request.type)}</Badge>
+              {request.bloodType &&
+                donorBloodType &&
+                (compatible ? (
+                  <Badge tone="green">🟢 Compatible</Badge>
+                ) : (
+                  <Badge tone="red">🔴 Incompatible</Badge>
+                ))}
             </div>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3.5">
@@ -135,15 +156,42 @@ export function DonationDetailsModal({
           </p>
         </div>
 
+        {inCooldown && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            You must wait 30 days between donations. You can donate again on{" "}
+            <span className="font-semibold">{formatDate(nextEligibleAt)}</span>.
+          </div>
+        )}
+
+        {!compatible && donorBloodType && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            This request requires{" "}
+            <span className="font-semibold">
+              {bloodTypeLabel(request.bloodType)}
+            </span>{" "}
+            blood. Your blood type (
+            <span className="font-semibold">
+              {bloodTypeLabel(donorBloodType)}
+            </span>
+            ) is not compatible.
+          </div>
+        )}
+
         {profileComplete ? (
           <Button
             size="lg"
             className="w-full bg-red-600 hover:bg-red-700"
             onClick={() => void handleDonate()}
-            disabled={saving}
+            disabled={saving || !canDonate}
           >
             <HeartHandshake className="size-4" />
-            {saving ? "Sending…" : "Donate Now"}
+            {saving
+              ? "Sending…"
+              : inCooldown
+                ? "Not eligible yet"
+                : !compatible
+                  ? "Blood type not compatible"
+                  : "Donate Now"}
           </Button>
         ) : (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

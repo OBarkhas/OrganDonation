@@ -8,10 +8,6 @@ export interface BadgeDefinition {
   threshold: number;
 }
 
-/**
- * All badges in the system. Badges are awarded automatically when a donor's
- * total COMPLETED donations reach the threshold.
- */
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     key: "first_donation",
@@ -50,12 +46,15 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   },
 ];
 
-/** Make sure every badge definition exists in the DB (idempotent). */
 export async function ensureBadges(): Promise<void> {
   for (const def of BADGE_DEFINITIONS) {
     await db.badge.upsert({
       where: { key: def.key },
-      update: { name: def.name, description: def.description, iconUrl: def.iconUrl },
+      update: {
+        name: def.name,
+        description: def.description,
+        iconUrl: def.iconUrl,
+      },
       create: {
         key: def.key,
         name: def.name,
@@ -66,10 +65,6 @@ export async function ensureBadges(): Promise<void> {
   }
 }
 
-/**
- * Award any badges the donor has newly unlocked based on their COMPLETED
- * donation count. Returns the keys of badges that were just awarded.
- */
 export async function awardBadgesForDonor(donorId: string): Promise<string[]> {
   await ensureBadges();
 
@@ -88,7 +83,9 @@ export async function awardBadgesForDonor(donorId: string): Promise<string[]> {
     if (completed >= def.threshold && !earnedKeys.has(def.key)) {
       const badge = await db.badge.findUnique({ where: { key: def.key } });
       if (badge) {
-        await db.userBadge.create({ data: { userId: donorId, badgeId: badge.id } });
+        await db.userBadge.create({
+          data: { userId: donorId, badgeId: badge.id },
+        });
         awarded.push(def.key);
       }
     }
@@ -106,7 +103,6 @@ export interface BadgeStatusDto {
   awardedAt: string | null;
 }
 
-/** All badges with earned/locked status for a donor (for profile display). */
 export async function getBadgeStatusForDonor(
   donorId: string,
 ): Promise<BadgeStatusDto[]> {
@@ -120,7 +116,9 @@ export async function getBadgeStatusForDonor(
     }),
   ]);
 
-  const earnedMap = new Map(userBadges.map((ub) => [ub.badge.key, ub.awardedAt]));
+  const earnedMap = new Map(
+    userBadges.map((ub) => [ub.badge.key, ub.awardedAt]),
+  );
 
   return BADGE_DEFINITIONS.map((def) => {
     const badge = badges.find((b) => b.key === def.key);
